@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Esercizio di Digitazione - Scuola & Didattica</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Google: Inter & JetBrains Mono per massima leggibilità -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        skybg: '#dff2fe',
+                        skycard: '#f0f9ff',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Sfondo azzurro chiaro richiesto */
+        body {
+            background-color: #dcf0fd;
+            background-image: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            min-height: 100vh;
+        }
+
+        /* Stile caratteri nel box modello */
+        .char-correct {
+            color: #15803d;
+            background-color: #dcfce7;
+            border-radius: 3px;
+        }
+
+        .char-incorrect {
+            color: #b91c1c;
+            background-color: #fee2e2;
+            text-decoration: underline wavy #ef4444;
+            border-radius: 3px;
+        }
+
+        .char-current {
+            background-color: #fef08a;
+            border-bottom: 3px solid #2563eb;
+            color: #1e3a8a;
+            border-radius: 2px;
+            animation: pulseCursor 1.1s infinite;
+        }
+
+        @keyframes pulseCursor {
+            0%, 100% { background-color: #fef08a; }
+            50% { background-color: #fde047; }
+        }
+
+        /* Personalizzazione scrollbar per le aree di testo */
+        textarea::-webkit-scrollbar,
+        .custom-scroll::-webkit-scrollbar {
+            width: 8px;
+        }
+        textarea::-webkit-scrollbar-track,
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+        textarea::-webkit-scrollbar-thumb,
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #93c5fd;
+            border-radius: 8px;
+        }
+        textarea::-webkit-scrollbar-thumb:hover,
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #60a5fa;
+        }
+
+        /* Stili per la stampa del report */
+        @media print {
+            body {
+                background: white !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            #printReportArea {
+                display: block !important;
+                box-shadow: none !important;
+                border: 2px solid #cbd5e1 !important;
+            }
+        }
+    </style>
+</head>
+<body class="text-slate-800 font-sans antialiased selection:bg-blue-200 selection:text-blue-900 pb-12">
+
+    <!-- BARRA SUPERIORE (Header con Livelli, Maiuscolo/Minuscolo, Timer, Scarica Punteggio) -->
+    <header class="bg-white/95 backdrop-blur-md border-b border-sky-200 shadow-sm sticky top-0 z-30 no-print">
+        <div class="max-w-6xl mx-auto px-4 py-3">
+            <!-- Riga 1: Titolo, Alunno e Tasto Scarica Punteggio -->
+            <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                <div class="flex items-center gap-3">
+                    <div class="bg-blue-600 text-white p-2.5 rounded-xl shadow-sm flex items-center justify-center">
+                        <!-- Icona Tastiera SVG -->
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="5" width="20" height="14" rx="3" />
+                            <path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 13h.01M10 13h.01M14 13h.01M18 13h.01M8 16h8" stroke-linecap="round" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-xl sm:text-2xl font-extrabold text-slate-800 tracking-tight leading-none">
+                            Esercizio di digitazione
+                        </h1>
+                        <p class="text-xs text-slate-500 mt-1">Allena velocità e precisione sulla tastiera</p>
+                    </div>
+                </div>
+
+                <!-- Input Nome Alunno + Pulsante Scarica Punteggio -->
+                <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <div class="flex items-center bg-sky-50 border border-sky-200 rounded-xl px-3 py-1.5">
+                        <label for="studentName" class="text-xs font-semibold text-sky-800 mr-2 whitespace-nowrap">Alunno:</label>
+                        <input type="text" id="studentName" placeholder="Scrivi il tuo nome..." 
+                               class="bg-transparent text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none w-32 sm:w-44">
+                    </div>
+
+                    <button onclick="downloadScoreReport()" id="topDownloadScoreBtn"
+                            class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-semibold text-sm px-4 py-2 rounded-xl shadow-sm transition cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V3" />
+                        </svg>
+                        <span>Scarica Punteggio</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Riga 2: Barra Controlli Didattici (Livelli, Maiuscolo/Minuscolo, Timer Modificabile) -->
+            <div class="pt-3 flex flex-wrap items-center justify-between gap-3">
+                
+                <!-- Scelta Livelli -->
+                <div class="flex flex-wrap items-center gap-1.5">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500 mr-1">Livello:</span>
+                    <div class="inline-flex flex-wrap bg-sky-100/80 p-1 rounded-xl border border-sky-200 gap-1" id="levelButtonsContainer">
+                        <button type="button" data-level="1" onclick="selectLevel(1)" class="level-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition cursor-pointer bg-blue-600 text-white shadow-sm">
+                            1 · Lettera singola
+                        </button>
+                        <button type="button" data-level="2" onclick="selectLevel(2)" class="level-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition cursor-pointer text-slate-700 hover:bg-white/70">
+                            2 · Bisillabe
+                        </button>
+                        <button type="button" data-level="3" onclick="selectLevel(3)" class="level-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition cursor-pointer text-slate-700 hover:bg-white/70">
+                            3 · Trisillabe
+                        </button>
+                        <button type="button" data-level="4" onclick="selectLevel(4)" class="level-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition cursor-pointer text-slate-700 hover:bg-white/70">
+                            4 · Parole & Frasi
+                        </button>
+                        <button type="button" data-level="5" onclick="selectLevel(5)" class="level-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition cursor-pointer text-slate-700 hover:bg-white/70">
+                            5 · Frasi complete
+                        </button>
+                        <button type="button" data-level="custom" onclick="selectLevel('custom')" id="customLevelBadge" class="level-btn hidden px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition cursor-pointer text-purple-800 bg-purple-100">
+                            ★ Testo Personalizzato
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Controlli Maiuscolo/Minuscolo e Timer -->
+                <div class="flex flex-wrap items-center gap-3">
+                    <!-- Maiuscolo / Minuscolo -->
+                    <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200" title="Scegli formato lettere">
+                        <button type="button" onclick="setCaseMode('lower')" id="caseLowerBtn"
+                                class="case-btn px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer bg-white text-blue-700 shadow-sm">
+                            abc (minuscolo)
+                        </button>
+                        <button type="button" onclick="setCaseMode('upper')" id="caseUpperBtn"
+                                class="case-btn px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer text-slate-600 hover:text-slate-900">
+                            ABC (MAIUSCOLO)
+                        </button>
+                        <button type="button" onclick="setCaseMode('normal')" id="caseNormalBtn"
+                                class="case-btn px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer text-slate-600 hover:text-slate-900">
+                            Abc (Misto)
+                        </button>
+                    </div>
+
+                    <!-- Timer di Default Modificabile -->
+                    <div class="flex items-center gap-1.5 bg-amber-50 border border-amber-200 px-3 py-1 rounded-xl">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="13" r="8" />
+                            <path stroke-linecap="round" d="M12 9v4l2 2M9 2h6" />
+                        </svg>
+                        <label for="timerDefaultInput" class="text-xs font-bold text-amber-900">Timer (sec):</label>
+                        <input type="number" id="timerDefaultInput" value="60" min="10" max="3600" step="5"
+                               onchange="updateDefaultTimer()"
+                               class="w-16 bg-white border border-amber-300 rounded-lg px-2 py-0.5 text-sm font-bold text-center text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400">
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTENUTO PRINCIPALE -->
+    <main class="max-w-4xl mx-auto px-4 mt-6 space-y-6">
+
+        <!-- AREA MESSAGGI / NOTIFICHE RAPIDE -->
+        <div id="toastBanner" class="hidden rounded-2xl px-4 py-3 text-sm font-semibold shadow-sm border transition-all duration-300 flex items-center justify-between">
+            <span id="toastMessage">Messaggio</span>
+            <button onclick="hideToast()" class="text-xs uppercase tracking-wider opacity-75 hover:opacity-100 ml-4 font-bold">Chiudi</button>
+        </div>
+
+        <!-- SCHEDA CENTRALE ESERCIZIO (Ispirata allo screenshot, migliorata) -->
+        <section class="bg-white rounded-3xl shadow-lg shadow-sky-900/5 border border-white p-5 sm:p-8 transition-all">
+            
+            <!-- Barra Statistiche in Tempo Reale -->
+            <div class="flex flex-wrap items-center justify-between gap-4 pb-4 mb-5 border-b border-slate-100">
+                <div class="flex flex-wrap items-center gap-5 sm:gap-7">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm text-slate-500 font-medium">Tempo rimanente:</span>
+                        <span id="timerDisplay" class="text-lg font-extrabold font-mono text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-lg border border-blue-100">01:00</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-sm text-slate-500 font-medium">Tentativo n.</span>
+                        <span id="attemptDisplay" class="text-base font-extrabold text-slate-800">1</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-sm text-slate-500 font-medium">Errori:</span>
+                        <span id="errorsDisplay" class="text-base font-extrabold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-lg">0</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-sm text-slate-500 font-medium">Precisione:</span>
+                        <span id="accuracyDisplay" class="text-base font-extrabold text-emerald-700">100%</span>
+                    </div>
+                </div>
+
+                <!-- Badge Stato Esercizio -->
+                <div>
+                    <span id="statusBadge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-sky-100 text-sky-800">
+                        <span class="w-2 h-2 rounded-full bg-sky-500 animate-pulse"></span>
+                        Pronto a iniziare
+                    </span>
+                </div>
+            </div>
+
+            <!-- BOX 1: Testo Modello da Copiare -->
+            <div class="mb-4">
+                <div class="flex items-center justify-between mb-1.5 px-1">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Testo da digitare (copia qui sotto)</span>
+                    <span id="progressCounter" class="text-xs font-semibold text-slate-500">0 / 0 caratteri</span>
+                </div>
+                <div id="targetTextDisplay" 
+                     class="w-full min-h-[135px] max-h-[220px] overflow-y-auto custom-scroll bg-slate-100/90 border-2 border-slate-200/80 rounded-2xl p-5 font-mono text-xl sm:text-2xl leading-relaxed tracking-wide text-slate-800 select-none">
+                    <!-- Popolato dinamicamente via JS -->
+                </div>
+            </div>
+
+            <!-- BOX 2: Area di Digitazione dello Studente -->
+            <div class="mb-4">
+                <div class="flex items-center justify-between mb-1.5 px-1">
+                    <label for="typingInput" class="text-xs font-bold uppercase tracking-wider text-blue-600">Scrivi qui il testo</label>
+                    <span class="text-xs text-slate-400">Il timer parte appena premi il primo tasto</span>
+                </div>
+                <textarea id="typingInput" 
+                          rows="4"
+                          spellcheck="false"
+                          autocomplete="off"
+                          autocorrect="off"
+                          autocapitalize="off"
+                          placeholder="Clicca qui e inizia a digitare il testo che vedi sopra..."
+                          class="w-full bg-slate-50 focus:bg-white border-2 border-blue-200 focus:border-blue-500 rounded-2xl p-5 font-mono text-xl sm:text-2xl leading-relaxed tracking-wide text-slate-900 focus:outline-none focus:ring-4 focus:ring-blue-500/15 transition resize-none"></textarea>
+            </div>
+
+            <!-- Barra Progresso Visiva -->
+            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden mb-5">
+                <div id="progressBar" class="bg-gradient-to-r from-blue-500 to-emerald-500 h-full w-0 transition-all duration-200 rounded-full"></div>
+            </div>
+
+            <!-- Messaggio di stato sotto i box (come nello screenshot) -->
+            <p id="helperStatusText" class="text-sm text-slate-500 mb-5 font-medium">
+                Digita il testo mostrato nel riquadro superiore. Quando hai finito, premi il pulsante verde <strong>"Ho finito l'attività"</strong>.
+            </p>
+
+            <!-- PULSANTI DI AZIONE SOTTO L'ESERCIZIO -->
+            <div class="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-100 no-print">
+                <!-- Pulsantino richiesto: Ho finito l'attività -->
+                <button type="button" onclick="finishActivity(true)" id="finishActivityBtn"
+                        class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-sm sm:text-base px-5 py-3 rounded-xl shadow-md shadow-emerald-600/20 transition cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Ho finito l'attività</span>
+                </button>
+
+                <!-- Stampa / Salva Report -->
+                <button type="button" onclick="openReportModal()" id="reportBtn"
+                        class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-semibold text-sm px-4 py-3 rounded-xl shadow-sm transition cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>Vedi / Scarica Report</span>
+                </button>
+
+                <!-- Gioca di nuovo (stesso testo, nuovo tentativo) -->
+                <button type="button" onclick="retrySameExercise()"
+                        class="flex items-center gap-2 bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 font-semibold text-sm px-4 py-3 rounded-xl transition cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span>Gioca di nuovo</span>
+                </button>
+
+                <!-- Nuovo testo del livello -->
+                <button type="button" onclick="generateNewLevelText()"
+                        class="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-semibold text-sm px-4 py-3 rounded-xl transition cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span>Nuovo testo</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- SEZIONE DEDICATA: TESTO PERSONALIZZATO E GESTIONE JSON (MOLTO IMPORTANTE) -->
+        <section class="bg-white/95 rounded-3xl shadow-lg shadow-sky-900/5 border-2 border-sky-200/80 p-5 sm:p-8 no-print">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="bg-indigo-100 text-indigo-700 p-2.5 rounded-xl">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-extrabold text-slate-800">Testo Personalizzato & Esportazione JSON</h2>
+                        <p class="text-xs sm:text-sm text-slate-500">Incolla qui un brano, una lista di parole o un dettato per creare un esercizio su misura</p>
+                    </div>
+                </div>
+
+                <!-- Importa JSON opzionale per ricaricare esercizi salvati -->
+                <div>
+                    <input type="file" id="jsonFileInput" accept=".json" class="hidden" onchange="importCustomJSON(event)">
+                    <button type="button" onclick="document.getElementById('jsonFileInput').click()"
+                            class="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-3 py-2 rounded-xl transition cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M16 8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        <span>Importa file JSON</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Box Vuoto dove incollare il testo -->
+            <div class="mb-4">
+                <label for="customTextBox" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+                    Incolla o scrivi qui il tuo testo:
+                </label>
+                <textarea id="customTextBox" 
+                          rows="4"
+                          placeholder="Incolla qui il testo che vuoi far digitare agli studenti (es. una filastrocca, parole con doppie, un brano di storia...)"
+                          class="w-full bg-sky-50/40 focus:bg-white border-2 border-slate-200 focus:border-indigo-500 rounded-2xl p-4 text-base text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/15 transition"></textarea>
+            </div>
+
+            <!-- I 2 Pulsantini Richiesti: Carica Testo e Scarica JSON -->
+            <div class="flex flex-wrap items-center gap-3">
+                <button type="button" onclick="loadCustomTextIntoExercise()"
+                        class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold text-sm px-5 py-3 rounded-xl shadow-md shadow-indigo-600/20 transition cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                    </svg>
+                    <span>Carica testo nell'esercizio</span>
+                </button>
+
+                <button type="button" onclick="downloadCustomTextAsJSON()"
+                        class="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 active:scale-95 text-white font-bold text-sm px-5 py-3 rounded-xl shadow-sm transition cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V3" />
+                    </svg>
+                    <span>Scarica JSON</span>
+                </button>
+
+                <button type="button" onclick="document.getElementById('customTextBox').value = ''"
+                        class="text-xs font-semibold text-slate-500 hover:text-rose-600 px-3 py-2 rounded-lg transition cursor-pointer ml-auto">
+                    Svuota box
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODALE REPORT FINALE / RIEPILOGO PUNTEGGIO -->
+    <div id="reportModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div id="printReportArea" class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-sky-100 relative animate-fadeIn">
+            <button onclick="closeReportModal()" class="no-print absolute top-5 right-5 text-slate-400 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-full p-2 transition cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+
+            <div class="text-center mb-6">
+                <div id="modalStars" class="text-3xl mb-2">⭐⭐⭐</div>
+                <h3 class="text-2xl font-extrabold text-slate-800" id="modalTitle">Attività Completata!</h3>
+                <p class="text-sm text-slate-500 mt-1" id="modalSubtitle">Ecco il riepilogo del tuo esercizio di digitazione</p>
+            </div>
+
+            <!-- Scheda Dati Risultato -->
+            <div class="bg-sky-50/70 border border-sky-200 rounded-2xl p-4 mb-6 space-y-2.5 text-sm">
+                <div class="flex justify-between py-1 border-b border-sky-100">
+                    <span class="text-slate-500 font-medium">Alunno:</span>
+                    <span class="font-bold text-slate-800" id="repStudent">Studente</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-sky-100">
+                    <span class="text-slate-500 font-medium">Livello svolto:</span>
+                    <span class="font-bold text-blue-700" id="repLevel">Livello 1</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-sky-100">
+                    <span class="text-slate-500 font-medium">Tempo impiegato:</span>
+                    <span class="font-bold text-slate-800" id="repTime">0s</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-sky-100">
+                    <span class="text-slate-500 font-medium">Caratteri digitati:</span>
+                    <span class="font-bold text-slate-800" id="repChars">0 / 0</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-sky-100">
+                    <span class="text-slate-500 font-medium">Errori commessi:</span>
+                    <span class="font-bold text-rose-600" id="repErrors">0</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-sky-100">
+                    <span class="text-slate-500 font-medium">Precisione:</span>
+                    <span class="font-bold text-emerald-700" id="repAccuracy">100%</span>
+                </div>
+                <div class="flex justify-between py-1">
+                    <span class="text-slate-500 font-medium">Velocità (CPM):</span>
+                    <span class="font-bold text-indigo-700" id="repSpeed">0 car/min</span>
+                </div>
+            </div>
+
+            <!-- Pulsanti nel Modale -->
+            <div class="flex flex-wrap gap-3 justify-center no-print">
+                <button type="button" onclick="downloadScoreReport()"
+                        class="flex-1 min-w-[160px] flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl shadow-sm transition cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V3" />
+                    </svg>
+                    <span>Scarica Punteggio</span>
+                </button>
+
+                <button type="button" onclick="window.print()"
+                        class="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl transition cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    <span>Stampa</span>
+                </button>
+
+                <button type="button" onclick="closeReportModal(); retrySameExercise();"
+                        class="w-full sm:w-auto flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 px-4 rounded-xl transition cursor-pointer">
+                    <span>Riprova</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGICA APPLICAZIONE JAVASCRIPT -->
+    <script>
+        // ==========================================
+        // 1. BANCA DATI LIVELLI DI DIFFICOLTÀ
+        // ==========================================
+        const LEVEL_DATA = {
+            1: {
+                name: "Livello 1 - Lettera singola",
+                generate: () => {
+                    const homeRow = ['a', 's', 'd', 'f', 'j', 'k', 'l', 'e', 'i', 'o', 'u', 'm', 'n', 'r', 't', 'p', 'c', 'v', 'b'];
+                    let items = [];
+                    for (let i = 0; i < 16; i++) {
+                        const randChar = homeRow[Math.floor(Math.random() * homeRow.length)];
+                        items.push(randChar);
+                    }
+                    return items.join(' ');
+                }
+            },
+            2: {
+                name: "Livello 2 - Bisillabe",
+                words: [
+                    "casa", "mare", "sole", "luna", "pane", "cane", "gatto", "mela", "pera", "mano",
+                    "naso", "fiori", "vela", "nave", "topo", "lupo", "orso", "rana", "ape", "nido",
+                    "ramo", "foglia", "erba", "sasso", "fiume", "lago", "neve", "vento", "nube", "stella",
+                    "libro", "penna", "banco", "zaino", "gomma", "aula", "porta", "muro", "tetto", "scala"
+                ],
+                generate: function() {
+                    const shuffled = [...this.words].sort(() => 0.5 - Math.random());
+                    return shuffled.slice(0, 10).join(' ');
+                }
+            },
+            3: {
+                name: "Livello 3 - Trisillabe",
+                words: [
+                    "tavolo", "matita", "albero", "banana", "limone", "fragola", "ciliegia", "patata",
+                    "carota", "insalata", "farfalla", "formica", "cicala", "balena", "delfino", "cavallo",
+                    "coniglio", "gallina", "pulcino", "pecora", "finestra", "quaderno", "astuccio", "lavagna",
+                    "maestra", "bambino", "scuola", "giardino", "nuvola", "pioggia", "montagna", "collina"
+                ],
+                generate: function() {
+                    const shuffled = [...this.words].sort(() => 0.5 - Math.random());
+                    return shuffled.slice(0, 8).join(' ');
+                }
+            },
+            4: {
+                name: "Livello 4 - Parole complesse e Frasi brevi",
+                phrases: [
+                    "Il gatto dorme sul tappeto morbido.",
+                    "Oggi il sole splende nel cielo azzurro.",
+                    "La maestra scrive alla lavagna con il gesso.",
+                    "Nel giardino fioriscono tante margherite bianche.",
+                    "Ho messo i libri e i quaderni nello zaino.",
+                    "La farfalla colorata vola sopra i fiori.",
+                    "Beviamo un bicchiere di acqua fresca.",
+                    "Il treno veloce attraversa la montagna."
+                ],
+                generate: function() {
+                    const shuffled = [...this.phrases].sort(() => 0.5 - Math.random());
+                    return shuffled.slice(0, 2).join(' ');
+                }
+            },
+            5: {
+                name: "Livello 5 - Frasi complete e punteggiatura",
+                phrases: [
+                    "Imparare a usare la tastiera con tutte le dita aiuta a scrivere più velocemente e senza guardare i tasti.",
+                    "In primavera gli alberi si riempiono di foglie verdi, gli uccellini cantano e le giornate diventano più lunghe.",
+                    "La lettura è una finestra aperta sul mondo: ogni libro ci permette di scoprire nuove storie e avventure straordinarie.",
+                    "Ricorda sempre di mantenere una postura corretta quando sei seduto davanti al computer a scuola o a casa."
+                ],
+                generate: function() {
+                    return this.phrases[Math.floor(Math.random() * this.phrases.length)];
+                }
+            }
+        };
+
+        // ==========================================
+        // 2. STATO DELL'APPLICAZIONE
+        // ==========================================
+        let state = {
+            currentLevel: 1,
+            caseMode: 'lower', // 'lower', 'upper', 'normal'
+            rawBaseText: '',   // Testo originale prima della trasformazione maiuscolo/minuscolo
+            targetText: '',    // Testo effettivo mostrato all'alunno
+            defaultSeconds: 60,
+            remainingSeconds: 60,
+            timerInterval: null,
+            isRunning: false,
+            isFinished: false,
+            attemptNumber: 1,
+            totalErrors: 0,
+            lastInputLength: 0,
+            startTimeTimestamp: null,
+            elapsedSeconds: 0
+        };
+
+        // Riferimenti DOM
+        const targetTextDisplay = document.getElementById('targetTextDisplay');
+        const typingInput = document.getElementById('typingInput');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const attemptDisplay = document.getElementById('attemptDisplay');
+        const errorsDisplay = document.getElementById('errorsDisplay');
+        const accuracyDisplay = document.getElementById('accuracyDisplay');
+        const progressCounter = document.getElementById('progressCounter');
+        const progressBar = document.getElementById('progressBar');
+        const statusBadge = document.getElementById('statusBadge');
+        const helperStatusText = document.getElementById('helperStatusText');
+
+        // ==========================================
+        // 3. INIZIALIZZAZIONE
+        // ==========================================
+        window.addEventListener('DOMContentLoaded', () => {
+            selectLevel(1);
+            typingInput.addEventListener('input', handleTypingInput);
+        });
+
+        // ==========================================
+        // 4. GESTIONE LIVELLI, MAIUSCOLO/MINUSCOLO E TIMER
+        // ==========================================
+        function selectLevel(level) {
+            state.currentLevel = level;
+            state.attemptNumber = 1;
+            attemptDisplay.textContent = state.attemptNumber;
+
+            // Aggiorna stile pulsanti livello
+            document.querySelectorAll('.level-btn').forEach(btn => {
+                const btnLevel = btn.getAttribute('data-level');
+                if (String(btnLevel) === String(level)) {
+                    btn.className = "level-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition cursor-pointer bg-blue-600 text-white shadow-sm";
+                } else {
+                    btn.className = "level-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition cursor-pointer text-slate-700 hover:bg-white/70";
+                }
+            });
+
+            if (level !== 'custom') {
+                state.rawBaseText = LEVEL_DATA[level].generate();
+            }
+            applyCaseAndResetExercise();
+        }
+
+        function generateNewLevelText() {
+            if (state.currentLevel === 'custom') {
+                const customBoxVal = document.getElementById('customTextBox').value.trim();
+                if (customBoxVal) {
+                    state.rawBaseText = customBoxVal;
+                } else {
+                    showToast("Il box testo personalizzato è vuoto. Passo al Livello 1.", "warning");
+                    selectLevel(1);
+                    return;
+                }
+            } else {
+                state.rawBaseText = LEVEL_DATA[state.currentLevel].generate();
+            }
+            state.attemptNumber = 1;
+            attemptDisplay.textContent = state.attemptNumber;
+            applyCaseAndResetExercise();
+            showToast("Nuovo testo generato! Inizia a digitare.", "info");
+        }
+
+        function setCaseMode(mode) {
+            state.caseMode = mode;
+
+            // Aggiorna UI pulsanti maiuscolo/minuscolo
+            document.querySelectorAll('.case-btn').forEach(b => {
+                b.className = "case-btn px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer text-slate-600 hover:text-slate-900";
+            });
+            const activeBtn = mode === 'lower' ? document.getElementById('caseLowerBtn') :
+                              mode === 'upper' ? document.getElementById('caseUpperBtn') :
+                                                 document.getElementById('caseNormalBtn');
+            activeBtn.className = "case-btn px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer bg-white text-blue-700 shadow-sm";
+
+            applyCaseAndResetExercise();
+        }
+
+        function transformTextByCase(text) {
+            if (state.caseMode === 'lower') return text.toLowerCase();
+            if (state.caseMode === 'upper') return text.toUpperCase();
+            return text; // 'normal'
+        }
+
+        function updateDefaultTimer() {
+            const inputVal = parseInt(document.getElementById('timerDefaultInput').value, 10);
+            if (isNaN(inputVal) || inputVal < 5) {
+                state.defaultSeconds = 60;
+                document.getElementById('timerDefaultInput').value = 60;
+            } else {
+                state.defaultSeconds = inputVal;
+            }
+            resetTimerState();
+            showToast(`Timer impostato a ${state.defaultSeconds} secondi.`, "info");
+        }
+
+        function resetTimerState() {
+            clearInterval(state.timerInterval);
+            state.timerInterval = null;
+            state.isRunning = false;
+            state.isFinished = false;
+            state.remainingSeconds = state.defaultSeconds;
+            state.elapsedSeconds = 0;
+            state.startTimeTimestamp = null;
+            updateTimerUI();
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
+        function updateTimerUI() {
+            timerDisplay.textContent = formatTime(state.remainingSeconds);
+            if (state.remainingSeconds <= 10 && state.isRunning) {
+                timerDisplay.className = "text-lg font-extrabold font-mono text-rose-700 bg-rose-100 px-2.5 py-0.5 rounded-lg border border-rose-300 animate-pulse";
+            } else {
+                timerDisplay.className = "text-lg font-extrabold font-mono text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-lg border border-blue-100";
+            }
+        }
+
+        // ==========================================
+        // 5. LOGICA DI DIGITAZIONE E CONFRONTO
+        // ==========================================
+        function applyCaseAndResetExercise() {
+            resetTimerState();
+            // Normalizza eventuali ritorni a capo multipli in spazi singoli per comodità di battitura
+            const cleaned = state.rawBaseText.replace(/\s+/g, ' ').trim();
+            state.targetText = transformTextByCase(cleaned);
+
+            typingInput.value = '';
+            typingInput.disabled = false;
+            state.totalErrors = 0;
+            state.lastInputLength = 0;
+
+            errorsDisplay.textContent = '0';
+            accuracyDisplay.textContent = '100%';
+            progressBar.style.width = '0%';
+            
+            setStatusBadge("Pronto a iniziare", "sky");
+            helperStatusText.innerHTML = `Digita il testo mostrato nel riquadro superiore. Quando hai finito, premi il pulsante verde <strong>"Ho finito l'attività"</strong>.`;
+
+            renderTargetText('');
+            typingInput.focus();
+        }
+
+        function retrySameExercise() {
+            state.attemptNumber += 1;
+            attemptDisplay.textContent = state.attemptNumber;
+            applyCaseAndResetExercise();
+            showToast(`Tentativo n. ${state.attemptNumber} avviato!`, "info");
+        }
+
+        function startTimer() {
+            if (state.isRunning || state.isFinished) return;
+            state.isRunning = true;
+            state.startTimeTimestamp = Date.now();
+            setStatusBadge("In corso...", "emerald");
+
+            state.timerInterval = setInterval(() => {
+                state.remainingSeconds -= 1;
+                state.elapsedSeconds = state.defaultSeconds - state.remainingSeconds;
+                updateTimerUI();
+
+                if (state.remainingSeconds <= 0) {
+                    finishActivity(false); // Tempo scaduto
+                }
+            }, 1000);
+        }
+
+        function handleTypingInput() {
+            if (state.isFinished) return;
+
+            const typed = typingInput.value;
+
+            // Avvia il timer al primo carattere digitato
+            if (!state.isRunning && typed.length > 0) {
+                startTimer();
+            }
+
+            // Controlla se l'utente ha appena aggiunto un carattere errato
+            if (typed.length > state.lastInputLength) {
+                const newCharIndex = typed.length - 1;
+                if (newCharIndex < state.targetText.length) {
+                    if (typed[newCharIndex] !== state.targetText[newCharIndex]) {
+                        state.totalErrors += 1;
+                    }
+                } else {
+                    state.totalErrors += 1;
+                }
+            }
+            state.lastInputLength = typed.length;
+
+            // Aggiorna visualizzazione carattere per carattere
+            renderTargetText(typed);
+
+            // Calcola statistiche live
+            updateLiveStats(typed);
+
+            // Controlla se l'alunno ha completato tutto il testo
+            if (typed.length >= state.targetText.length) {
+                finishActivity(true);
+            }
+        }
+
+        function renderTargetText(typed) {
+            const target = state.targetText;
+            let html = '';
+
+            for (let i = 0; i < target.length; i++) {
+                const expectedChar = target[i];
+                const displayChar = expectedChar === ' ' ? '&nbsp;' : escapeHtml(expectedChar);
+
+                if (i < typed.length) {
+                    if (typed[i] === expectedChar) {
+                        html += `<span class="char-correct">${displayChar}</span>`;
+                    } else {
+                        html += `<span class="char-incorrect">${displayChar}</span>`;
+                    }
+                } else if (i === typed.length && !state.isFinished) {
+                    html += `<span class="char-current">${displayChar}</span>`;
+                } else {
+                    html += `<span>${displayChar}</span>`;
+                }
+            }
+
+            targetTextDisplay.innerHTML = html;
+            progressCounter.textContent = `${Math.min(typed.length, target.length)} / ${target.length} caratteri`;
+        }
+
+        function updateLiveStats(typed) {
+            errorsDisplay.textContent = state.totalErrors;
+
+            // Calcolo precisione
+            let correctCount = 0;
+            for (let i = 0; i < Math.min(typed.length, state.targetText.length); i++) {
+                if (typed[i] === state.targetText[i]) correctCount++;
+            }
+
+            const totalKeystrokes = Math.max(typed.length + state.totalErrors, 1);
+            // Formula intuitiva per ragazzi: basata sui caratteri corretti rispetto al totale battuto + errori
+            const rawAccuracy = typed.length === 0 ? 100 : Math.max(0, Math.round(((typed.length - countCurrentMismatches(typed)) / typed.length) * 100));
+            accuracyDisplay.textContent = `${rawAccuracy}%`;
+
+            // Barra avanzamento
+            const pct = Math.min(100, Math.round((typed.length / Math.max(state.targetText.length, 1)) * 100));
+            progressBar.style.width = `${pct}%`;
+        }
+
+        function countCurrentMismatches(typed) {
+            let mismatches = 0;
+            for (let i = 0; i < typed.length; i++) {
+                if (i >= state.targetText.length || typed[i] !== state.targetText[i]) {
+                    mismatches++;
+                }
+            }
+            return mismatches;
+        }
+
+        // ==========================================
+        // 6. CONCLUSIONE ATTIVITÀ ("Ho finito l'attività") E REPORT
+        // ==========================================
+        function finishActivity(completedByUser = true) {
+            if (state.isFinished) {
+                openReportModal();
+                return;
+            }
+
+            clearInterval(state.timerInterval);
+            state.timerInterval = null;
+            state.isRunning = false;
+            state.isFinished = true;
+            typingInput.disabled = true;
+
+            if (state.startTimeTimestamp) {
+                const realElapsed = Math.max(1, Math.round((Date.now() - state.startTimeTimestamp) / 1000));
+                state.elapsedSeconds = Math.min(state.defaultSeconds, realElapsed);
+            } else {
+                state.elapsedSeconds = 0;
+            }
+
+            renderTargetText(typingInput.value);
+
+            if (completedByUser) {
+                setStatusBadge("Attività completata!", "emerald");
+                helperStatusText.innerHTML = `<span class="text-emerald-700 font-bold">Ottimo lavoro! Attività terminata.</span> Puoi scaricare il tuo punteggio o cliccare su "Gioca di nuovo".`;
+            } else {
+                setStatusBadge("Tempo scaduto", "amber");
+                helperStatusText.innerHTML = `<span class="text-amber-700 font-bold">Tempo scaduto!</span> Scarica il report del punteggio per salvare il risultato.`;
+            }
+
+            openReportModal(completedByUser);
+        }
+
+        function getCurrentStatsSummary() {
+            const student = document.getElementById('studentName').value.trim() || "Alunno (Non specificato)";
+            const levelName = state.currentLevel === 'custom'
+                ? "Livello Personalizzato"
+                : LEVEL_DATA[state.currentLevel].name;
+
+            const typed = typingInput.value;
+            const charsTyped = typed.length;
+            const totalChars = state.targetText.length;
+
+            let correctChars = 0;
+            for (let i = 0; i < Math.min(charsTyped, totalChars); i++) {
+                if (typed[i] === state.targetText[i]) correctChars++;
+            }
+
+            const accuracy = charsTyped === 0
+                ? 100
+                : Math.max(0, Math.round((correctChars / charsTyped) * 100));
+
+            const secondsUsed = state.elapsedSeconds > 0
+                ? state.elapsedSeconds
+                : (state.defaultSeconds - state.remainingSeconds);
+
+            const minutes = Math.max(secondsUsed / 60, 1 / 60);
+            const cpm = charsTyped > 0 ? Math.round(correctChars / minutes) : 0;
+
+            return {
+                student,
+                levelName,
+                attempt: state.attemptNumber,
+                secondsUsed,
+                defaultSeconds: state.defaultSeconds,
+                charsTyped,
+                totalChars,
+                correctChars,
+                errors: state.totalErrors,
+                accuracy,
+                cpm,
+                caseMode: state.caseMode,
+                date: new Date().toLocaleString('it-IT')
+            };
+        }
+
+        function openReportModal(completedByUser = true) {
+            const stats = getCurrentStatsSummary();
+
+            document.getElementById('repStudent').textContent = stats.student;
+            document.getElementById('repLevel').textContent = stats.levelName;
+            document.getElementById('repTime').textContent = `${stats.secondsUsed} sec (su ${stats.defaultSeconds}s)`;
+            document.getElementById('repChars').textContent = `${stats.charsTyped} / ${stats.totalChars}`;
+            document.getElementById('repErrors').textContent = stats.errors;
+            document.getElementById('repAccuracy').textContent = `${stats.accuracy}%`;
+            document.getElementById('repSpeed').textContent = `${stats.cpm} car/min`;
+
+            // Stelline motivazionali
+            let stars = "⭐⭐⭐";
+            if (stats.accuracy >= 95 && stats.charsTyped > 0) stars = "⭐⭐⭐";
+            else if (stats.accuracy >= 75 && stats.charsTyped > 0) stars = "⭐⭐";
+            else stars = "⭐";
+
+            document.getElementById('modalStars').textContent = stars;
+            document.getElementById('modalTitle').textContent = completedByUser ? "Attività Completata!" : "Tempo Scaduto!";
+
+            const modal = document.getElementById('reportModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeReportModal() {
+            const modal = document.getElementById('reportModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // Scarica il punteggio in formato file di testo riepilogativo leggibile
+        function downloadScoreReport() {
+            const s = getCurrentStatsSummary();
+            const content = [
+                "==========================================",
+                "   REPORT ESERCIZIO DI DIGITAZIONE",
+                "==========================================",
+                `Data e ora:          ${s.date}`,
+                `Alunno:              ${s.student}`,
+                `Livello:             ${s.levelName}`,
+                `Tentativo n.:        ${s.attempt}`,
+                `Formato lettere:     ${s.caseMode === 'upper' ? 'MAIUSCOLO' : s.caseMode === 'lower' ? 'minuscolo' : 'Misto'}`,
+                "------------------------------------------",
+                `Tempo impiegato:     ${s.secondsUsed} secondi`,
+                `Caratteri digitati:  ${s.charsTyped} su ${s.totalChars}`,
+                `Caratteri corretti:  ${s.correctChars}`,
+                `Errori commessi:     ${s.errors}`,
+                `Precisione:          ${s.accuracy}%`,
+                `Velocità media:      ${s.cpm} caratteri al minuto`,
+                "=========================================="
+            ].join("\n");
+
+            const safeStudentName = s.student.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+            triggerDownload(content, `punteggio_digitazione_${safeStudentName}.txt`, "text/plain;charset=utf-8");
+            showToast("Report del punteggio scaricato con successo!", "success");
+        }
+
+        // ==========================================
+        // 7. GESTIONE TESTO PERSONALIZZATO E JSON
+        // ==========================================
+        function loadCustomTextIntoExercise() {
+            const box = document.getElementById('customTextBox');
+            const rawText = box.value.trim();
+
+            if (!rawText) {
+                showToast("Incolla o scrivi prima un testo nel riquadro qui sotto!", "warning");
+                box.focus();
+                return;
+            }
+
+            state.rawBaseText = rawText;
+            const customBadge = document.getElementById('customLevelBadge');
+            customBadge.classList.remove('hidden');
+
+            selectLevel('custom');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            showToast("Testo personalizzato caricato nell'esercizio!", "success");
+        }
+
+        function downloadCustomTextAsJSON() {
+            const box = document.getElementById('customTextBox');
+            const textContent = box.value.trim();
+
+            if (!textContent) {
+                showToast("Inserisci prima del testo nel box per poterlo scaricare in JSON.", "warning");
+                box.focus();
+                return;
+            }
+
+            const payload = {
+                app: "Esercizio di Digitazione",
+                versione: "1.0",
+                dataCreazione: new Date().toISOString(),
+                impostazioni: {
+                    timerSecondi: state.defaultSeconds,
+                    formatoCaratteri: state.caseMode
+                },
+                testoPersonalizzato: textContent
+            };
+
+            const jsonString = JSON.stringify(payload, null, 2);
+            triggerDownload(jsonString, "esercizio_digitazione_custom.json", "application/json;charset=utf-8");
+            showToast("File JSON scaricato correttamente!", "success");
+        }
+
+        function importCustomJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    const importedText = parsed.testoPersonalizzato || parsed.text || "";
+
+                    if (!importedText) {
+                        showToast("Il file JSON non contiene un campo 'testoPersonalizzato' valido.", "warning");
+                        return;
+                    }
+
+                    document.getElementById('customTextBox').value = importedText;
+
+                    if (parsed.impostazioni && parsed.impostazioni.timerSecondi) {
+                        document.getElementById('timerDefaultInput').value = parsed.impostazioni.timerSecondi;
+                        state.defaultSeconds = parseInt(parsed.impostazioni.timerSecondi, 10) || 60;
+                    }
+
+                    loadCustomTextIntoExercise();
+                    showToast("File JSON caricato e attivato nell'esercizio!", "success");
+                } catch (err) {
+                    showToast("Errore nella lettura del file JSON. Verifica che il file sia valido.", "warning");
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        // ==========================================
+        // 8. UTILITY GRAFICHE E DOWNLOAD
+        // ==========================================
+        function triggerDownload(content, filename, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function setStatusBadge(label, color) {
+            const colors = {
+                sky: "bg-sky-100 text-sky-800",
+                emerald: "bg-emerald-100 text-emerald-800",
+                amber: "bg-amber-100 text-amber-800"
+            };
+            const dotColors = {
+                sky: "bg-sky-500",
+                emerald: "bg-emerald-500",
+                amber: "bg-amber-500"
+            };
+            statusBadge.className = `inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${colors[color] || colors.sky}`;
+            statusBadge.innerHTML = `<span class="w-2 h-2 rounded-full ${dotColors[color] || dotColors.sky}"></span> ${label}`;
+        }
+
+        let toastTimeout = null;
+        function showToast(msg, type = "info") {
+            const banner = document.getElementById('toastBanner');
+            const messageEl = document.getElementById('toastMessage');
+
+            const styles = {
+                info: "bg-blue-50 border-blue-200 text-blue-800",
+                success: "bg-emerald-50 border-emerald-200 text-emerald-800",
+                warning: "bg-amber-50 border-amber-200 text-amber-900"
+            };
+
+            banner.className = `rounded-2xl px-4 py-3 text-sm font-semibold shadow-sm border transition-all duration-300 flex items-center justify-between ${styles[type] || styles.info}`;
+            messageEl.textContent = msg;
+            banner.classList.remove('hidden');
+
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                hideToast();
+            }, 4000);
+        }
+
+        function hideToast() {
+            document.getElementById('toastBanner').classList.add('hidden');
+        }
+
+        function escapeHtml(str) {
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
